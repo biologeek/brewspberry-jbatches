@@ -1,9 +1,20 @@
 package net.brewspberry.batches.tasks;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
+
+import javax.persistence.criteria.CriteriaBuilder.In;
 
 import net.brewspberry.batches.exceptions.NotTheGoodNumberOfArgumentsException;
 import net.brewspberry.batches.util.DS18b20TemperatureMeasurementParser;
@@ -18,7 +29,14 @@ import net.brewspberry.business.service.EtapeServiceImpl;
 import net.brewspberry.util.LogManager;
 
 public class RecordTemperatureFromFileTask implements Task {
-
+	/**
+	 * RecordTemperatureFromFileTask represents 1 temperature record.
+	 *  
+	 * It can be launched in a separate thread. 
+	 * 
+	 */
+	
+	
 	
 	DS18b20TemperatureMeasurementParser parser = DS18b20TemperatureMeasurementParser.getInstance();
 	String[] filesToRead;
@@ -26,14 +44,21 @@ public class RecordTemperatureFromFileTask implements Task {
 	
 	IGenericService<Brassin> brassinService = new BrassinServiceImpl();
 	IGenericService<Etape> etapeService = new EtapeServiceImpl();
-	IGenericService<Actioner> actionenrService = new ActionerServiceImpl();
+	IGenericService<Actioner> actionerService = new ActionerServiceImpl();
+	IGenericService<TemperatureMeasurement> tmesService = new TemperatureMeasurementServiceImpl();
 	
 	String specificParameters = null;
-	TemperatureMeasurement temperatureMeasurement = new TemperatureMeasurement();	
+	List<TemperatureMeasurement> temperatureMeasurement = new ArrayList<TemperatureMeasurement>();	
 	
 	
 	public RecordTemperatureFromFileTask(String specificParameters) {
 		super();
+		
+		/*
+		 * Specific parameters are  : 
+		 * * 
+		 * 
+		 */
 		this.specificParameters = specificParameters;
 	}
 
@@ -62,16 +87,67 @@ public class RecordTemperatureFromFileTask implements Task {
 				
 				String[] specificParametersArray = specificParameters.split(" ");
 				
-				Brassin brassin = brassinService.getElementById()
-				temperatureMeasurement.setTmes_brassin();
+				Brassin brassin = brassinService.getElementById(Long.parseLong(specificParametersArray[0]));
+				Etape etape = etapeService.getElementById(Long.parseLong(specificParametersArray[1]));
+				Actioner actioner = actionerService.getElementById(Long.parseLong(specificParametersArray[2]));
 				
+
+				Iterator<Entry<String, Integer>> entries = valuesMap.entrySet().iterator(); 
+
+				int i = 0;
+				while (entries.hasNext()){
+					
+					TemperatureMeasurement tmes = new TemperatureMeasurement();
+					Entry<String,Integer> entry = entries.next();
+					
+
+					tmes.setTmes_brassin(brassin);
+					tmes.setTmes_etape(etape);
+					tmes.setTmes_actioner(actioner);
+					tmes.setTmes_date(new Date());
+					
+
+					tmes.setTmes_probeUI (entry.getKey());
+					tmes.setTmes_value (Float.valueOf(entry.getValue()));
+					tmes.setTmes_probe_name ("PROBE"+i);
+					
+					i++;
+					
+					temperatureMeasurement.add(tmes);
+					
+				}
 				
-				
+				if (temperatureMeasurement.size() > 0){
+					
+					
+					List<String> linesToAddToCSV = this.formatDataForCSVFile(temperatureMeasurement);
+					
+					
+					Iterator<TemperatureMeasurement> it = temperatureMeasurement.iterator();
+					
+					
+					while (it.hasNext()){
+						
+						TemperatureMeasurement tmesToRec = it.next();
+						
+						try {
+							
+							tmesService.save(tmesToRec);
+							
+						} catch(Exception e){
+							logger.severe("Could not record this measurement : UUID="+tmesToRec.getTmes_probeUI());
+							
+							e.printStackTrace();
+						}
+					}					
+				}
 			}
 		} catch (NotTheGoodNumberOfArgumentsException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		
 			
 		
 	}
@@ -102,6 +178,54 @@ public class RecordTemperatureFromFileTask implements Task {
 		
 	}
 	
+	
+	public List<String> formatDataForCSVFile (List<TemperatureMeasurement> tmes){
+		
+		String lineResult = new String();
+		
+		List<String> result = new ArrayList<String>();
+		logger.fine(tmes.size()+" temperatures to write");
+		
+		Iterator<TemperatureMeasurement> it = tmes.iterator();
+		
+		
+		while (it.hasNext()){
+	
+			TemperatureMeasurement tmesU = it.next();
+			
+			lineResult = sdf.format(new Date()) + ";"
+					+ String.valueOf(tmesU.getTmes_brassin().getBra_id())+";"
+					+ String.valueOf(tmesU.getTmes_etape().getEtp_id())+";"
+					+ String.valueOf(tmesU.getTmes_actioner().getAct_id())+";"
+					+ String.valueOf(tmesU.getTmes_probe_name())+";"
+					+ String.valueOf(tmesU.getTmes_value());
+			
+			result.add(lineResult);
+		}
+		
+		return result;
+			
+		
+	}
+	
+	
+	
+	private synchronized void writeCSV(String str){
+		
+		
+		try {
+			Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Constants.DS18B20), "utf-8"));
+			
+			
+			writer.write(str);
+			
+			
+		} catch (Exception e){
+			
+			logger.severe("Could not write line to file "+Constants.DS18B20);
+			
+		}
+	}
 	
 	
 }
