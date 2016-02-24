@@ -27,6 +27,9 @@ import net.brewspberry.business.beans.TemperatureMeasurement;
 import net.brewspberry.business.service.ActionerServiceImpl;
 import net.brewspberry.business.service.BrassinServiceImpl;
 import net.brewspberry.business.service.EtapeServiceImpl;
+import net.brewspberry.business.service.TemperatureMeasurementServiceImpl;
+import net.brewspberry.util.ConfigLoader;
+import net.brewspberry.util.Constants;
 import net.brewspberry.util.LogManager;
 
 public class RecordTemperatureFromFileTask implements Task {
@@ -60,6 +63,7 @@ public class RecordTemperatureFromFileTask implements Task {
 		 */
 		
 		
+
 		this.specificParameters = specificParameters;
 	}
 
@@ -71,15 +75,16 @@ public class RecordTemperatureFromFileTask implements Task {
 
 	public void run() {
 
-		
 		logger.info("Thread started");
 		filesToRead = parser.findFilesToOpen();
 
 		for (String file : filesToRead) {
+
 			if (file != null) {
 
 				Integer temperature = parser.parseTemperature(file);
 				String uuid = parser.getProbeUUIDFromFileName(file);
+
 				valuesMap.put(uuid, temperature);
 			}
 		}
@@ -110,9 +115,12 @@ public class RecordTemperatureFromFileTask implements Task {
 					tmes.setTmes_etape(etape);
 					tmes.setTmes_actioner(actioner);
 					tmes.setTmes_date(new Date());
+
+
 					tmes.setTmes_probeUI(entry.getKey());
 					tmes.setTmes_value(Float.valueOf(entry.getValue()));
 					tmes.setTmes_probe_name("PROBE" + i);
+
 					i++;
 
 					temperatureMeasurement.add(tmes);
@@ -153,6 +161,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 								e.printStackTrace();
 							}
+
 						}
 					}
 				}
@@ -163,6 +172,7 @@ public class RecordTemperatureFromFileTask implements Task {
 		}
 		
 		System.exit(0);
+
 
 	}
 
@@ -201,6 +211,7 @@ public class RecordTemperatureFromFileTask implements Task {
 		List<String> result = new ArrayList<String>();
 		logger.fine(tmes.size() + " temperatures to write");
 
+
 		if (tmes.size() > 0) {
 			Iterator<TemperatureMeasurement> it = tmes.iterator();
 
@@ -229,11 +240,16 @@ public class RecordTemperatureFromFileTask implements Task {
 	 * @param str
 	 *            string to write
 	 */
+
 	private synchronized void writeCSV(String str) {
 
 		try {
 			Writer writer = new BufferedWriter(new OutputStreamWriter(
-					new FileOutputStream(Constants.DS18B20_CSV), "utf-8"));
+
+					new FileOutputStream(ConfigLoader.getConfigByKey(
+							Constants.CONFIG_PROPERTIES,
+							"files.measurements.temperature")), "utf-8"));
+
 
 			writer.write(str);
 

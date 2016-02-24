@@ -1,29 +1,41 @@
 package net.brewspberry.batches.launchers;
 
+<<<<<<< HEAD
 import net.brewspberry.batches.exceptions.NotTheGoodNumberOfArgumentsException;
+=======
+import java.util.logging.Logger;
+
+>>>>>>> master
 import net.brewspberry.batches.tasks.RecordTemperatureFromFileTask;
 import net.brewspberry.batches.tasks.Task;
+import net.brewspberry.util.LogManager;
 
 public class BatchRecordTemperatures implements Batch {
 
+	Logger logger = LogManager.getInstance(BatchRecordTemperatures.class.getName());
 	Task currentTask = null;
-
-	public BatchRecordTemperatures(String[] args)
-			throws NotTheGoodNumberOfArgumentsException {
-
-		/*
-		 * args : 0 - Time slot : ONCE, MINUTE, ... 1 - Duration : 1, 10, 15...
-		 * 2 - Brew ID 3 - Step ID 4 - Actioner ID
+	
+	public BatchRecordTemperatures (String[] args){
+		/**
+		 * Parameters to pass for this batch : 
+		 * 0- 
+		 * 1- 
+		 * 2- 
+		 * 3- 
+		 * 4- 
+		 * 5- 
 		 */
-
-		if (args.length != 5) {
-
-			throw new NotTheGoodNumberOfArgumentsException();
-
+		
+		if (args.length != 5){
+			
+			logger.severe("Could not initialize batch, number of arguments wrong : "+args.length+" (5 expected)");
+			System.exit(1);
 		} else {
-			execute(args);
+			
+			
+			
 		}
-
+		
 	}
 
 	/**
