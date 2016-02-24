@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,6 +50,8 @@ public class RecordTemperatureFromFileTask implements Task {
 	IGenericService<Actioner> actionerService = new ActionerServiceImpl();
 	IGenericService<TemperatureMeasurement> tmesService = new TemperatureMeasurementServiceImpl();
 
+	String entityToWrite = new String();
+
 	String specificParameters = null;
 	List<TemperatureMeasurement> temperatureMeasurement = new ArrayList<TemperatureMeasurement>();
 
@@ -56,8 +59,11 @@ public class RecordTemperatureFromFileTask implements Task {
 		super();
 
 		/*
-		 * Specific parameters are : *
+		 * Specific parameters are : 
 		 */
+		
+		
+
 		this.specificParameters = specificParameters;
 	}
 
@@ -69,6 +75,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 	public void run() {
 
+		logger.info("Thread started");
 		filesToRead = parser.findFilesToOpen();
 
 		for (String file : filesToRead) {
@@ -109,6 +116,7 @@ public class RecordTemperatureFromFileTask implements Task {
 					tmes.setTmes_actioner(actioner);
 					tmes.setTmes_date(new Date());
 
+
 					tmes.setTmes_probeUI(entry.getKey());
 					tmes.setTmes_value(Float.valueOf(entry.getValue()));
 					tmes.setTmes_probe_name("PROBE" + i);
@@ -121,33 +129,50 @@ public class RecordTemperatureFromFileTask implements Task {
 
 				if (temperatureMeasurement.size() > 0) {
 
-					List<String> linesToAddToCSV = this
-							.formatDataForCSVFile(temperatureMeasurement);
+					if (entityToWrite.equals("ALL")
+							|| entityToWrite.equals("FILE")) {
 
-					Iterator<TemperatureMeasurement> it = temperatureMeasurement
-							.iterator();
+						List<String> linesToAddToCSV = this
+								.formatDataForCSVFile(temperatureMeasurement);
 
-					while (it.hasNext()) {
+						Iterator<String> it2 = linesToAddToCSV.iterator();
+						while (it2.hasNext()) {
 
-						TemperatureMeasurement tmesToRec = it.next();
+							this.writeCSV(it2.next());
 
-						try {
+						}
 
-							tmesService.save(tmesToRec);
+					}
+					if (entityToWrite.equals("ALL")
+							|| entityToWrite.equals("SQL")) {
+						Iterator<TemperatureMeasurement> it = temperatureMeasurement
+								.iterator();
 
-						} catch (Exception e) {
-							logger.severe("Could not record this measurement : UUID="
-									+ tmesToRec.getTmes_probeUI());
+						while (it.hasNext()) {
+							TemperatureMeasurement tmesToRec = it.next();
 
-							e.printStackTrace();
+							try {
+
+								tmesService.save(tmesToRec);
+
+							} catch (Exception e) {
+								logger.severe("Could not record this measurement : UUID="
+										+ tmesToRec.getTmes_probeUI());
+
+								e.printStackTrace();
+							}
+
 						}
 					}
 				}
 			}
 		} catch (NotTheGoodNumberOfArgumentsException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
+		
+		System.exit(0);
+
 
 	}
 
@@ -186,43 +211,71 @@ public class RecordTemperatureFromFileTask implements Task {
 		List<String> result = new ArrayList<String>();
 		logger.fine(tmes.size() + " temperatures to write");
 
-		Iterator<TemperatureMeasurement> it = tmes.iterator();
 
-		while (it.hasNext()) {
+		if (tmes.size() > 0) {
+			Iterator<TemperatureMeasurement> it = tmes.iterator();
 
-			TemperatureMeasurement tmesU = it.next();
+			while (it.hasNext()) {
 
-			lineResult = sdf.format(new Date()) + ";"
-					+ String.valueOf(tmesU.getTmes_brassin().getBra_id()) + ";"
-					+ String.valueOf(tmesU.getTmes_etape().getEtp_id()) + ";"
-					+ String.valueOf(tmesU.getTmes_actioner().getAct_id())
-					+ ";" + String.valueOf(tmesU.getTmes_probe_name()) + ";"
-					+ String.valueOf(tmesU.getTmes_value());
+				TemperatureMeasurement tmesU = it.next();
 
-			result.add(lineResult);
+				lineResult = sdf.format(new Date()) + ";"
+						+ String.valueOf(tmesU.getTmes_brassin().getBra_id())
+						+ ";"
+						+ String.valueOf(tmesU.getTmes_etape().getEtp_id())
+						+ ";"
+						+ String.valueOf(tmesU.getTmes_actioner().getAct_id())
+						+ ";" + String.valueOf(tmesU.getTmes_probe_name())
+						+ ";" + String.valueOf(tmesU.getTmes_value());
+
+				result.add(lineResult);
+			}
 		}
-
 		return result;
-
 	}
+
+	/**
+	 * Writes str to Constants.DS18B20_CSV file
+	 * 
+	 * @param str
+	 *            string to write
+	 */
 
 	private synchronized void writeCSV(String str) {
 
 		try {
 			Writer writer = new BufferedWriter(new OutputStreamWriter(
+
 					new FileOutputStream(ConfigLoader.getConfigByKey(
 							Constants.CONFIG_PROPERTIES,
 							"files.measurements.temperature")), "utf-8"));
 
+
 			writer.write(str);
 
 		} catch (Exception e) {
-
 			logger.severe("Could not write line to file "
-					+ ConfigLoader.getConfigByKey(Constants.CONFIG_PROPERTIES,
-							"files.measurements.temperature"));
-
+					+ Constants.DS18B20_CSV);
 		}
 	}
 
+	/**
+	 * Sets where to write temperatures.
+	 * 
+	 * Can be for example FILE for file writing, SQL for DB record, ALL for both
+	 * 
+	 * @param entityToWrite
+	 */
+	public void setWriteParameters(String entityToWrite) {
+
+		if (entityToWrite != null) {
+
+			if (Arrays.asList(Constants.WRITABLE_ENTITIES).contains(
+					entityToWrite)) {
+
+				this.entityToWrite = entityToWrite;
+			}
+		}
+
+	}
 }
