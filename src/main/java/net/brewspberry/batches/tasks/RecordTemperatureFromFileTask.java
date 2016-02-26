@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import javax.persistence.criteria.CriteriaBuilder.In;
-
 import net.brewspberry.batches.exceptions.NotTheGoodNumberOfArgumentsException;
 import net.brewspberry.batches.util.DS18b20TemperatureMeasurementParser;
 import net.brewspberry.business.IGenericService;
@@ -186,6 +184,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 		String[] params = specs.split(" ");
 
+		logger.info("Got this : "+specs+" "+params.length);
 		if (params.length == 3) {
 
 			logger.info("Parameters : Brew ID=" + params[0] + " Step ID="
@@ -244,6 +243,7 @@ public class RecordTemperatureFromFileTask implements Task {
 	private synchronized void writeCSV(String str) {
 
 		try {
+			@SuppressWarnings("resource")
 			Writer writer = new BufferedWriter(new OutputStreamWriter(
 
 					new FileOutputStream(ConfigLoader.getConfigByKey(
@@ -255,7 +255,9 @@ public class RecordTemperatureFromFileTask implements Task {
 
 		} catch (Exception e) {
 			logger.severe("Could not write line to file "
-					+ Constants.DS18B20_CSV);
+					+ ConfigLoader.getConfigByKey(
+							Constants.CONFIG_PROPERTIES,
+							"files.measurements.temperature"));
 		}
 	}
 

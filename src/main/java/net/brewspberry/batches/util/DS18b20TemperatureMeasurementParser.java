@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import net.brewspberry.batches.tasks.reqult;
 import net.brewspberry.util.Constants;
 import net.brewspberry.util.LogManager;
 
@@ -90,7 +89,12 @@ public class DS18b20TemperatureMeasurementParser {
 								.substring(content.get(0).length() - 3)
 								.equals("YES")) {
 
-							Thread.sleep(threadSleepMillis);
+							try {
+								Thread.sleep(threadSleepMillis);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
 						
 						
@@ -113,7 +117,7 @@ public class DS18b20TemperatureMeasurementParser {
 
 	public String getProbeUUIDFromFileName(String file) {
 
-		String result;
+		String result = null;
 		String UUIDPattern = Pattern.compile("28-????????????").pattern();
 
 		String[] fileSplit = file.split("/");

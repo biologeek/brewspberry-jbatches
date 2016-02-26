@@ -1,11 +1,8 @@
 package net.brewspberry.batches.launchers;
 
-<<<<<<< HEAD
 import net.brewspberry.batches.exceptions.NotTheGoodNumberOfArgumentsException;
-=======
 import java.util.logging.Logger;
 
->>>>>>> master
 import net.brewspberry.batches.tasks.RecordTemperatureFromFileTask;
 import net.brewspberry.batches.tasks.Task;
 import net.brewspberry.util.LogManager;
@@ -32,7 +29,7 @@ public class BatchRecordTemperatures implements Batch {
 			System.exit(1);
 		} else {
 			
-			
+			this.execute(args);
 			
 		}
 		
