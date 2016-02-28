@@ -1,128 +1,155 @@
 package net.brewspberry.batches.launchers;
 
-import net.brewspberry.batches.exceptions.NotTheGoodNumberOfArgumentsException;
 import java.util.logging.Logger;
+
+import javax.naming.spi.DirStateFactory.Result;
 
 import net.brewspberry.batches.tasks.RecordTemperatureFromFileTask;
 import net.brewspberry.batches.tasks.Task;
+import net.brewspberry.business.IGenericService;
+import net.brewspberry.business.beans.Actioner;
+import net.brewspberry.business.beans.Brassin;
+import net.brewspberry.business.beans.Etape;
+import net.brewspberry.business.service.ActionerServiceImpl;
+import net.brewspberry.business.service.BrassinServiceImpl;
+import net.brewspberry.business.service.EtapeServiceImpl;
+import net.brewspberry.util.ConfigLoader;
+import net.brewspberry.util.Constants;
 import net.brewspberry.util.LogManager;
 
 public class BatchRecordTemperatures implements Batch {
 
-	Logger logger = LogManager.getInstance(BatchRecordTemperatures.class.getName());
+	Logger logger = LogManager.getInstance(BatchRecordTemperatures.class
+			.getName());
 	Task currentTask = null;
 	
-	public BatchRecordTemperatures (String[] args){
+
+	IGenericService<Brassin> brassinService = new BrassinServiceImpl();
+	IGenericService<Etape> etapeService = new EtapeServiceImpl();
+	IGenericService<Actioner> actionerService = new ActionerServiceImpl();
+
+	public BatchRecordTemperatures(String[] args) {
 		/**
-		 * Parameters to pass for this batch : 
-		 * 0- 
-		 * 1- 
-		 * 2- 
-		 * 3- 
-		 * 4- 
-		 * 5- 
+		 * Parameters to pass for this batch : 0- 1- 2- 3- 4- 5-
 		 */
-		
-		if (args.length != 5){
-			
-			logger.severe("Could not initialize batch, number of arguments wrong : "+args.length+" (5 expected)");
+
+		if (args.length != 5) {
+
+			logger.severe("Could not initialize batch, number of arguments wrong : "
+					+ args.length + " (5 expected)");
 			System.exit(1);
 		} else {
-			
+
 			this.execute(args);
-			
+
 		}
-		
+
 	}
 
 	/**
 	 * Params order : - 0 LaunchType : ONCE, SECOND, MINUTE, HOUR, INDEFINITE -
-	 * 2-n Specific argument
+	 * 1 Launch length 2-n Specific argument
 	 */
 	public void execute(String[] batchParams) {
 
-		String taskParams = this.getTaskParameters(batchParams, 2);
+		Object[] taskParams = this.getTaskParameters(batchParams, 2);
 
+		Integer threadSleep = Integer.parseInt(ConfigLoader.getConfigByKey(Constants.PROJECT_ROOT_PATH+"/"+Constants.BREW_CONF+"/batches.properties", "brewspberry.batches.threads.delay"));
 		long timeLength;
 		long startTime;
 
+		
 		if (batchParams[0] != null) {
 
+			
 			switch (batchParams[0]) {
 
 			case "ONCE":
+				try {
+					currentTask = new RecordTemperatureFromFileTask(taskParams);
 
-				currentTask = new RecordTemperatureFromFileTask(taskParams);
+					currentTask.setWriteParameters("ALL");
 
-				currentTask.setWriteParameters(String.join("ALL"));
+					Thread t = new Thread((Runnable) currentTask);
 
-				Thread t = new Thread((Runnable) currentTask);
-
-				t.start();
-
+					t.start();
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
 				break;
 
 			case "SECOND":
 
 				timeLength = Long.parseLong(batchParams[1]) * 1000;
+
+				
 				startTime = System.currentTimeMillis();
 
-				currentTask = new RecordTemperatureFromFileTask(taskParams);
-				currentTask.setWriteParameters(String.join("ALL"));
-
 				while ((System.currentTimeMillis() - startTime) < timeLength) {
-
-					new Thread((Runnable) currentTask).start();
+					
+					logger.info("--BEGIN : Time length : "+timeLength+" | Real : "+(System.currentTimeMillis() - startTime));
+					
 					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
+						new Thread((Runnable) new RecordTemperatureFromFileTask(taskParams)).start();
+						Thread.sleep(threadSleep);
+					} catch (Throwable e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					
 				}
 
 				break;
 
 			case "MINUTE":
+				try {
 
-				timeLength = Long.parseLong(batchParams[1]) * 1000 * 60;
-				startTime = System.currentTimeMillis();
+					timeLength = Long.parseLong(batchParams[1]) * 1000 * 60;
+					startTime = System.currentTimeMillis();
 
-				currentTask = new RecordTemperatureFromFileTask(taskParams);
-				currentTask.setWriteParameters(String.join("ALL"));
+					currentTask = new RecordTemperatureFromFileTask(taskParams);
+					currentTask.setWriteParameters(String.join("ALL"));
 
-				while ((System.currentTimeMillis() - startTime) < timeLength) {
+					while ((System.currentTimeMillis() - startTime) < timeLength) {
 
-					new Thread((Runnable) currentTask).start();
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						try {
+							Thread t = new Thread((Runnable) currentTask);
+							
+							Thread.sleep(threadSleep);
+						} catch (Throwable e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
+				} catch (Throwable t) {
+					t.printStackTrace();
 				}
 
 				break;
 
 			case "HOUR":
+				try {
 
-				timeLength = Long.parseLong(batchParams[1]) * 1000 * 3600;
-				startTime = System.currentTimeMillis();
+					timeLength = Long.parseLong(batchParams[1]) * 1000 * 3600;
+					startTime = System.currentTimeMillis();
 
-				currentTask = new RecordTemperatureFromFileTask(taskParams);
-				currentTask.setWriteParameters(String.join("ALL"));
+					currentTask = new RecordTemperatureFromFileTask(taskParams);
+					currentTask.setWriteParameters(String.join("ALL"));
 
-				while ((System.currentTimeMillis() - startTime) < timeLength) {
+					while ((System.currentTimeMillis() - startTime) < timeLength) {
 
-					new Thread((Runnable) currentTask).start();
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						try {
+							new Thread((Runnable) currentTask).start();
+							Thread.sleep(threadSleep);
+						} catch (Throwable e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
-				}
 
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
 				break;
 
 			case "INDEFINITE":
@@ -131,19 +158,32 @@ public class BatchRecordTemperatures implements Batch {
 
 			}
 		}
+		
+		
+		logger.info("Exiting program");		
 
 	}
 
-	private String getTaskParameters(String[] batchParams, int firstElement) {
-
-		String result = new String();
+	private Object[] getTaskParameters(String[] batchParams, int firstElement) {
+		String[] specParams = new String[3];
+		Object[] result = new Object[3];
+		
+		
 		if (batchParams.length > 0 && batchParams.length > firstElement) {
 
-			for (int i = firstElement; i < batchParams.length; i++) {
+			System.arraycopy(batchParams, firstElement, specParams, 0, result.length);
 
-				result = result + " " + batchParams[i];
+			Brassin brassin = brassinService.getElementById(Long
+					.parseLong(specParams[0]));
+			Etape etape = etapeService.getElementById(Long
+					.parseLong(specParams[1]));
+			Actioner actioner = actionerService.getElementById(Long
+					.parseLong(specParams[2]));
 
-			}
+			result[0] = brassin;
+			result[1] = etape;
+			result[2] = actioner;
+			logger.info("Transmitting " + result + " to task");
 
 		}
 

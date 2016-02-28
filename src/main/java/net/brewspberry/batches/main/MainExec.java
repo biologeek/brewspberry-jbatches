@@ -28,6 +28,7 @@ public class MainExec {
 				try {
 					Batch recordTemperature = new BatchRecordTemperatures(
 							batchParams);
+					System.exit(0);
 
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

@@ -1,10 +1,16 @@
 package net.brewspberry.batches.util;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -52,21 +58,45 @@ public class DS18b20TemperatureMeasurementParser {
 	 * Searching and returning all files in /sys/bus/devices/28* /w1_slave
 	 * 
 	 * @return array of files
+	 * @throws IOException 
 	 */
-	public String[] findFilesToOpen() {
-		String[] files;
-		File dir = new File(Constants.DS18B20_DEVICES_FOLDER);
+	public List<Path> findFilesToOpen() throws IOException {
+		
+		
+		List<Path> files = new ArrayList<Path>();
+		
+		String glob = "glob:"+Constants.DS18B20_DIR_PATTERN;
+		
+		
+		
+		final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
+				glob);
+		
+		
+		Files.walkFileTree(Paths.get(Constants.DS18B20_DEVICES_FOLDER), new SimpleFileVisitor<Path>() {
+			
+			@Override
+			public FileVisitResult visitFile(Path path,
+					BasicFileAttributes attrs) throws IOException {
+				
+				
+				logger.info("FileVisitor "+path.toString());
 
-		files = dir.list(new FilenameFilter() {
+				if (pathMatcher.matches(path.getFileName())) {
+						
+					files.add(Paths.get(path.toString(), Constants.DS18B20_FILE_NAME));
+					logger.fine("Added path "+Paths.get(path.toString(), Constants.DS18B20_FILE_NAME)+" to list");
+				}
+				return FileVisitResult.CONTINUE;
+			}
 
-			public boolean accept(File dir, String name) {
-				return name.matches(Constants.DS18B20_DIR_PATTERN);
+			@Override
+			public FileVisitResult visitFileFailed(Path file, IOException exc)
+					throws IOException {
+				return FileVisitResult.CONTINUE;
 			}
 		});
-
-		for (String file : files) {
-			file = file + "/" + Constants.DS18B20_FILE_NAME;
-		}
+			
 
 		return files;
 	}
@@ -111,6 +141,7 @@ public class DS18b20TemperatureMeasurementParser {
 			}
 
 		}
+		
 		return result;
 
 	}
@@ -118,7 +149,7 @@ public class DS18b20TemperatureMeasurementParser {
 	public String getProbeUUIDFromFileName(String file) {
 
 		String result = null;
-		String UUIDPattern = Pattern.compile("28-????????????").pattern();
+		String UUIDPattern = Pattern.compile("28-[a-zA-Z0-9]{12}").pattern();
 
 		String[] fileSplit = file.split("/");
 

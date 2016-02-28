@@ -2,8 +2,11 @@ package net.brewspberry.batches.tasks;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,27 +43,22 @@ public class RecordTemperatureFromFileTask implements Task {
 
 	DS18b20TemperatureMeasurementParser parser = DS18b20TemperatureMeasurementParser
 			.getInstance();
-	String[] filesToRead;
+	List<Path> filesToRead;
 	Map<String, Integer> valuesMap = new HashMap<String, Integer>();
 
-	IGenericService<Brassin> brassinService = new BrassinServiceImpl();
-	IGenericService<Etape> etapeService = new EtapeServiceImpl();
-	IGenericService<Actioner> actionerService = new ActionerServiceImpl();
 	IGenericService<TemperatureMeasurement> tmesService = new TemperatureMeasurementServiceImpl();
 
-	String entityToWrite = new String();
+	String entityToWrite = "ALL";
 
-	String specificParameters = null;
+	Object[] specificParameters = null;
 	List<TemperatureMeasurement> temperatureMeasurement = new ArrayList<TemperatureMeasurement>();
 
-	public RecordTemperatureFromFileTask(String specificParameters) {
+	public RecordTemperatureFromFileTask(Object[] specificParameters) {
 		super();
 
 		/*
-		 * Specific parameters are : 
+		 * Specific parameters are :
 		 */
-		
-		
 
 		this.specificParameters = specificParameters;
 	}
@@ -74,9 +72,18 @@ public class RecordTemperatureFromFileTask implements Task {
 	public void run() {
 
 		logger.info("Thread started");
-		filesToRead = parser.findFilesToOpen();
+		try {
+			filesToRead = parser.findFilesToOpen();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
-		for (String file : filesToRead) {
+		Iterator<Path> itP = filesToRead.iterator();
+
+		while (itP.hasNext()) {
+
+			String file = Paths.get(itP.next().toUri()).toString();
 
 			if (file != null) {
 
@@ -87,18 +94,10 @@ public class RecordTemperatureFromFileTask implements Task {
 			}
 		}
 
+		logger.info("Could find " + valuesMap.size() + " devices");
+
 		try {
 			if (checkSpecificParameters(specificParameters)) {
-
-				String[] specificParametersArray = specificParameters
-						.split(" ");
-
-				Brassin brassin = brassinService.getElementById(Long
-						.parseLong(specificParametersArray[0]));
-				Etape etape = etapeService.getElementById(Long
-						.parseLong(specificParametersArray[1]));
-				Actioner actioner = actionerService.getElementById(Long
-						.parseLong(specificParametersArray[2]));
 
 				Iterator<Entry<String, Integer>> entries = valuesMap.entrySet()
 						.iterator();
@@ -109,11 +108,10 @@ public class RecordTemperatureFromFileTask implements Task {
 					TemperatureMeasurement tmes = new TemperatureMeasurement();
 					Entry<String, Integer> entry = entries.next();
 
-					tmes.setTmes_brassin(brassin);
-					tmes.setTmes_etape(etape);
-					tmes.setTmes_actioner(actioner);
+					tmes.setTmes_brassin((Brassin) specificParameters[0]);
+					tmes.setTmes_etape((Etape) specificParameters[1]);
+					tmes.setTmes_actioner((Actioner) specificParameters[2]);
 					tmes.setTmes_date(new Date());
-
 
 					tmes.setTmes_probeUI(entry.getKey());
 					tmes.setTmes_value(Float.valueOf(entry.getValue()));
@@ -168,10 +166,6 @@ public class RecordTemperatureFromFileTask implements Task {
 
 			e.printStackTrace();
 		}
-		
-		System.exit(0);
-
-
 	}
 
 	/**
@@ -179,23 +173,33 @@ public class RecordTemperatureFromFileTask implements Task {
 	 * 
 	 * @throws NotTheGoodNumberOfArgumentsException
 	 */
-	public boolean checkSpecificParameters(String specs)
+	public boolean checkSpecificParameters(Object[] specs)
 			throws NotTheGoodNumberOfArgumentsException {
 
-		String[] params = specs.split(" ");
+		logger.fine("Got this : ");
 
-		logger.info("Got this : "+specs+" "+params.length);
-		if (params.length == 3) {
+		if (specs[0] instanceof Brassin && specs[1] instanceof Etape
+				&& specs[2] instanceof Actioner) {
+			for (Object param : specs) {
 
-			logger.info("Parameters : Brew ID=" + params[0] + " Step ID="
-					+ params[1] + " Actioner ID=" + params[2]);
+				logger.fine("| " + param);
 
-			return true;
+			}
 
-		} else {
-			throw new NotTheGoodNumberOfArgumentsException();
+			if (specs.length == 3) {
+
+				logger.info("Parameters : Brew=" + specs[0] + " Step="
+						+ specs[1] + " Actioner=" + specs[2]);
+
+				return true;
+
+			} else {
+				throw new NotTheGoodNumberOfArgumentsException();
+			}
 		}
-
+		else {
+			return false;
+		}
 	}
 
 	public void buildSpecificParameters(String specs) {
@@ -209,7 +213,6 @@ public class RecordTemperatureFromFileTask implements Task {
 
 		List<String> result = new ArrayList<String>();
 		logger.fine(tmes.size() + " temperatures to write");
-
 
 		if (tmes.size() > 0) {
 			Iterator<TemperatureMeasurement> it = tmes.iterator();
@@ -241,23 +244,29 @@ public class RecordTemperatureFromFileTask implements Task {
 	 */
 
 	private synchronized void writeCSV(String str) {
+		Writer writer = null;
 
 		try {
-			@SuppressWarnings("resource")
-			Writer writer = new BufferedWriter(new OutputStreamWriter(
+			writer = new BufferedWriter(new OutputStreamWriter(
 
-					new FileOutputStream(ConfigLoader.getConfigByKey(
-							Constants.CONFIG_PROPERTIES,
-							"files.measurements.temperature")), "utf-8"));
-
+			new FileOutputStream(ConfigLoader.getConfigByKey(
+					Constants.CONFIG_PROPERTIES,
+					"files.measurements.temperature")), "utf-8"));
 
 			writer.write(str);
 
 		} catch (Exception e) {
 			logger.severe("Could not write line to file "
-					+ ConfigLoader.getConfigByKey(
-							Constants.CONFIG_PROPERTIES,
+					+ ConfigLoader.getConfigByKey(Constants.CONFIG_PROPERTIES,
 							"files.measurements.temperature"));
+		} finally {
+
+			try {
+				writer.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
