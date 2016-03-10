@@ -53,6 +53,16 @@ public class RecordTemperatureFromFileTask implements Task {
 	Object[] specificParameters = null;
 	List<TemperatureMeasurement> temperatureMeasurement = new ArrayList<TemperatureMeasurement>();
 
+
+	private Logger logger = LogManager
+			.getInstance(DS18b20TemperatureMeasurementParser.class.getName());
+
+	public static SimpleDateFormat sdf = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm:ss");
+
+	
+	
+
 	public RecordTemperatureFromFileTask(Object[] specificParameters) {
 		super();
 
@@ -62,13 +72,6 @@ public class RecordTemperatureFromFileTask implements Task {
 
 		this.specificParameters = specificParameters;
 	}
-
-	private Logger logger = LogManager
-			.getInstance(DS18b20TemperatureMeasurementParser.class.getName());
-
-	public static SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss");
-
 	public void run() {
 
 		logger.info("Thread started");
@@ -79,11 +82,12 @@ public class RecordTemperatureFromFileTask implements Task {
 			e1.printStackTrace();
 		}
 
+		logger.info("Found "+filesToRead.size()+" files :");
 		Iterator<Path> itP = filesToRead.iterator();
 
 		while (itP.hasNext()) {
-
 			String file = Paths.get(itP.next().toUri()).toString();
+			logger.info(file);
 
 			if (file != null) {
 

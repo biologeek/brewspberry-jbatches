@@ -47,6 +47,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 					+ args.length + " (5 expected)");
 			System.exit(1);
 		}
+		this.batchParams = args;
 
 	}
 
@@ -62,6 +63,10 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 		String[] specParams = new String[3];
 		Object[] result = new Object[3];
 
+
+		logger.info(String.valueOf(String.join(";",batchParams)));
+		logger.info(String.valueOf(firstElement));
+		logger.info(String.valueOf(String.join(";",specParams)));
 		if (batchParams.length > 0 && batchParams.length > firstElement) {
 
 			System.arraycopy(batchParams, firstElement, specParams, 0,
@@ -77,7 +82,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 			result[0] = brassin;
 			result[1] = etape;
 			result[2] = actioner;
-			logger.info("Transmitting " + result + " to task");
+			logger.info("Transmitting " + result[0]+ result[1]+ result[2]+ " to task");
 
 		}
 
@@ -92,6 +97,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 	@Override
 	public void execute(String[] batchParams) {
+		logger.info("Got parameters : "+String.join(";", batchParams));
 
 		Object[] taskParams = this.getTaskParameters(batchParams, 2);
 
@@ -99,11 +105,13 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 				Constants.PROJECT_ROOT_PATH + "/" + Constants.BREW_CONF
 						+ "/batches.properties",
 				"brewspberry.batches.threads.delay"));
-		long timeLength;
+		double timeLength;
 		long startTime;
 
 		if (batchParams[0] != null) {
 
+			
+			logger.info("OK on passe la");
 			switch (batchParams[0]) {
 
 			case "ONCE":
@@ -122,7 +130,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 			case "SECOND":
 
-				timeLength = Long.parseLong(batchParams[1]) * 1000;
+				timeLength = Double.parseDouble(batchParams[1]) * 1000;
 
 				startTime = System.currentTimeMillis();
 
@@ -149,7 +157,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 			case "MINUTE":
 				try {
 
-					timeLength = Long.parseLong(batchParams[1]) * 1000 * 60;
+					timeLength = Double.parseDouble(batchParams[1]) * 1000 * 60;
 					startTime = System.currentTimeMillis();
 
 					currentTask = new RecordTemperatureFromFileTask(taskParams);
@@ -175,7 +183,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 			case "HOUR":
 				try {
 
-					timeLength = Long.parseLong(batchParams[1]) * 1000 * 3600;
+					timeLength = Double.parseDouble(batchParams[1]) * 1000.0 * 3600.0;
 					startTime = System.currentTimeMillis();
 
 					currentTask = new RecordTemperatureFromFileTask(taskParams);
