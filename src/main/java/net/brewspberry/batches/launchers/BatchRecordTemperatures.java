@@ -105,9 +105,13 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 				Constants.PROJECT_ROOT_PATH + "/" + Constants.BREW_CONF
 						+ "/batches.properties",
 				"brewspberry.batches.threads.delay"));
+		
+		
 		double timeLength;
 		long startTime;
 
+		
+		logger.info("Thread sleep param : " + threadSleep);
 		if (batchParams[0] != null) {
 
 			
@@ -157,7 +161,8 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 			case "MINUTE":
 				try {
 
-					timeLength = Double.parseDouble(batchParams[1]) * 1000 * 60;
+					logger.info("Recording temperatures for "+batchParams[1]+" minutes");
+					timeLength = Double.parseDouble(batchParams[1]) * 1000.0 * 60.0;
 					startTime = System.currentTimeMillis();
 
 					currentTask = new RecordTemperatureFromFileTask(taskParams);
@@ -165,9 +170,10 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 					while ((System.currentTimeMillis() - startTime) < timeLength) {
 
+						logger.info(startTime + " - "+System.currentTimeMillis());
 						try {
 							Thread t = new Thread((Runnable) currentTask);
-
+							t.start();
 							Thread.sleep(threadSleep);
 						} catch (Throwable e) {
 							// TODO Auto-generated catch block
@@ -182,6 +188,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 			case "HOUR":
 				try {
+					logger.info("Recording temperatures for "+batchParams[1]+" hours");
 
 					timeLength = Double.parseDouble(batchParams[1]) * 1000.0 * 3600.0;
 					startTime = System.currentTimeMillis();

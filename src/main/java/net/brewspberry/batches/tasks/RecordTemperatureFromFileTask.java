@@ -131,6 +131,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 					if (entityToWrite.equals("ALL")
 							|| entityToWrite.equals("FILE")) {
+						logger.info("Saving in File");
 
 						List<String> linesToAddToCSV = this
 								.formatDataForCSVFile(temperatureMeasurement);
@@ -152,7 +153,7 @@ public class RecordTemperatureFromFileTask implements Task {
 							TemperatureMeasurement tmesToRec = it.next();
 
 							try {
-
+								logger.info("Saving in DB");
 								tmesService.save(tmesToRec);
 
 							} catch (Exception e) {
