@@ -165,6 +165,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 						}
 					}
+					temperatureMeasurement = new ArrayList<TemperatureMeasurement>();
 				}
 			}
 		} catch (NotTheGoodNumberOfArgumentsException e) {

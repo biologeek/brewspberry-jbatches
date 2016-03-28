@@ -166,7 +166,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 					startTime = System.currentTimeMillis();
 
 					currentTask = new RecordTemperatureFromFileTask(taskParams);
-					currentTask.setWriteParameters(String.join("ALL"));
+					currentTask.setWriteParameters("ALL");
 
 					while ((System.currentTimeMillis() - startTime) < timeLength) {
 
