@@ -17,12 +17,6 @@
 			<scope>compile</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>net.brewspberry</groupId>
-			<artifactId>brewspberry-ioc</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
