@@ -33,7 +33,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 		 * Parameters to pass for this batch : 0- 1- 2- 3- 4- 5-
 		 */
 
-		logger.warning("Dont forget to set batch params !");
+		logger.fine("Dont forget to set batch params !");
 
 	}
 
@@ -64,9 +64,8 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 		Object[] result = new Object[3];
 
 
-		logger.info(String.valueOf(String.join(";",batchParams)));
-		logger.info(String.valueOf(firstElement));
-		logger.info(String.valueOf(String.join(";",specParams)));
+		logger.info("Params : "+String.valueOf(String.join(";",batchParams)+" | "+String.join(";",specParams)));
+
 		if (batchParams.length > 0 && batchParams.length > firstElement) {
 
 			System.arraycopy(batchParams, firstElement, specParams, 0,
@@ -82,7 +81,7 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 			result[0] = brassin;
 			result[1] = etape;
 			result[2] = actioner;
-			logger.info("Transmitting " + result[0]+ result[1]+ result[2]+ " to task");
+			logger.fine("Transmitting " + result[0]+ result[1]+ result[2]+ " to task");
 
 		}
 
@@ -97,7 +96,6 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 	@Override
 	public void execute(String[] batchParams) {
-		logger.info("Got parameters : "+String.join(";", batchParams));
 
 		Object[] taskParams = this.getTaskParameters(batchParams, 2);
 
@@ -111,11 +109,10 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 		long startTime;
 
 		
-		logger.info("Thread sleep param : " + threadSleep);
+		logger.fine("Thread sleep param : " + threadSleep);
 		if (batchParams[0] != null) {
 
 			
-			logger.info("OK on passe la");
 			switch (batchParams[0]) {
 
 			case "ONCE":
@@ -170,7 +167,6 @@ public class BatchRecordTemperatures implements Batch, Runnable {
 
 					while ((System.currentTimeMillis() - startTime) < timeLength) {
 
-						logger.info(startTime + " - "+System.currentTimeMillis());
 						try {
 							Thread t = new Thread((Runnable) currentTask);
 							t.start();

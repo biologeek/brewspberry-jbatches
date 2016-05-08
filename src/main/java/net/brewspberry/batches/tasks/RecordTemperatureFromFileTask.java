@@ -74,7 +74,6 @@ public class RecordTemperatureFromFileTask implements Task {
 	}
 	public void run() {
 
-		logger.info("Thread started");
 		try {
 			filesToRead = parser.findFilesToOpen();
 		} catch (IOException e1) {
@@ -82,12 +81,11 @@ public class RecordTemperatureFromFileTask implements Task {
 			e1.printStackTrace();
 		}
 
-		logger.info("Found "+filesToRead.size()+" files :");
+		logger.info("Thread started. Found "+filesToRead.size()+" files :");
 		Iterator<Path> itP = filesToRead.iterator();
 
 		while (itP.hasNext()) {
 			String file = Paths.get(itP.next().toUri()).toString();
-			logger.info(file);
 
 			if (file != null) {
 
@@ -131,7 +129,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 					if (entityToWrite.equals("ALL")
 							|| entityToWrite.equals("FILE")) {
-						logger.info("Saving in File");
+						logger.fine("Saving in File");
 
 						List<String> linesToAddToCSV = this
 								.formatDataForCSVFile(temperatureMeasurement);
@@ -153,7 +151,7 @@ public class RecordTemperatureFromFileTask implements Task {
 							TemperatureMeasurement tmesToRec = it.next();
 
 							try {
-								logger.info("Saving in DB");
+								logger.fine("Saving in DB");
 								tmesService.save(tmesToRec);
 
 							} catch (Exception e) {
@@ -194,7 +192,7 @@ public class RecordTemperatureFromFileTask implements Task {
 
 			if (specs.length == 3) {
 
-				logger.info("Parameters : Brew=" + specs[0] + " Step="
+				logger.fine("Parameters : Brew=" + specs[0] + " Step="
 						+ specs[1] + " Actioner=" + specs[2]);
 
 				return true;
@@ -218,7 +216,7 @@ public class RecordTemperatureFromFileTask implements Task {
 		String lineResult = new String();
 
 		List<String> result = new ArrayList<String>();
-		logger.fine(tmes.size() + " temperatures to write");
+		logger.finer(tmes.size() + " temperatures to write");
 
 		if (tmes.size() > 0) {
 			Iterator<TemperatureMeasurement> it = tmes.iterator();
